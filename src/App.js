@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import './App.css'
 
-const a = 4
-const b = 2
+// console.log(2.12 * -1)
 
-const t = a / b
-
-console.log(t)
 function App() {
   const [output, setOutput] = useState(0)
   const [prevNum, setPrevNum] = useState(0)
   const [optType, setOptType] = useState(null)
+
+  Number.prototype.countDecimals = function () {
+    if(Math.floor(this.valueOf()) === this.valueOf()) return 0;
+    return this.toString().split(".")[1].length || 0; 
+  }
 
   const handelOutput = (num) => {
     if (num === 0 && output === 0) {
@@ -21,7 +22,11 @@ function App() {
       setOutput(num)
     } else if (num === '.') {
       console.log('3')
-      setOutput(prev => prev.toString().concat(num))
+      if ((output.toString()).includes('.')){
+        return
+      } else {
+        setOutput(prev => prev.toString().concat(num))
+      }
     } else if (output.toString().charAt(output.length - 1) === '.') {
       console.log('4')
       setOutput(prev => prev.concat(num))
@@ -32,59 +37,73 @@ function App() {
     }
   }
 
+  const handelDecimal = (first, second) => {
+    const valueAfterDeci = (first.countDecimals() > second.countDecimals() ? first.countDecimals() : second.countDecimals())
+    console.log(valueAfterDeci, 'opt', optType)
+    if (optType === '+') {
+      if (parseFloat(((first * 100) + (second * 100)) / 100).toString().length > 10) {
+        return (Number((first + second).toFixed(valueAfterDeci)))
+      } else {
+        return parseFloat(((first * 100) + (second * 100)) / 100)
+      }
+    } else if (optType === '-') {
+      if (parseFloat(((first * 100) - (second * 100)) / 100).toString().length > 10) {
+        return Number((first - second).toFixed(valueAfterDeci))
+      } else {
+        return parseFloat(((first * 100) - (second * 100)) / 100)
+      }
+    } else if (optType === '*') {
+      if ((first * second).toString().length > 10) {
+        return Number((first * second).toFixed(valueAfterDeci + 1))
+      } else {
+        return (first * second)
+      }
+    } else if (optType === 'divide') {
+      return (first / second)
+    }
+  }
+
   const handelMath = (type) => {
 
-    const opt = (
-      type === '+' ? Number(prevNum) + Number(output):
-      type === '-' ? Number(prevNum) - Number(output):
-      type === '*' ? Number(prevNum) * Number(output):
-      type === 'divide' ? Number(prevNum) / Number(output): '')
-    
-    if (prevNum !== 0) {
-      setPrevNum(opt)
-      setOutput(0)
-      console.log('in after' ,prevNum)
-    } else {
-      setPrevNum(output)
-      setOutput(0)
+    if (type === '%') {
+      setOutput(prev => Number(prev / 100))
+    } else if (type === '+/-') {
+      setOutput(prev => prev * -1)
+    } else if (optType !== type) {
+      if (prevNum !== 0) {
+        setPrevNum(handelDecimal(Number(prevNum), Number(output)))
+        setOptType(type)
+        setOutput(0)
+      } else {
+        setPrevNum(output)
+        setOptType(type)
+        setOutput(0)
+      }
     }
-    
-    setOptType(type)
-    console.log('after' ,prevNum)
   }
 
   const handelEqual = () => {
-   
-    const handelDecimal = (first, second) => {
-      return ((first * 100) + (second * 100)) / 100 
-    }
-
-    if (optType === '+') {
+    if (prevNum !== 0) {
+      console.log('where',prevNum, output)
       setOutput(prev => handelDecimal(Number(prevNum), Number(prev)))
-    } else if (optType === '-') {
-      console.log('in sub')
-      setOutput(prev => Number(prevNum) - Number(prev))
-    } else if (optType === '*') {
-      setOutput(prev => Number(prevNum) * Number(prev))
-    } else if (optType === 'divide') {
-      setOutput(prev => Number(prevNum) / Number(prev))
+      setOptType(null)
+      setPrevNum(0)
+    } else {
+      setOutput(output)
     }
-
-    setOptType(null)
-    setPrevNum(0)
   }
 
   const handelClear = () => {
-    setOutput('0')
+    setOutput(0)
     setPrevNum(0)
   }
   return (
     <div className="App">
       <div className='input-filed'><span className='result'>{(output === 0 ? prevNum : output)}</span></div>
       <div className='btn'>
-        <button onClick={handelClear} >{(output === '0' && prevNum === 0 ? 'AC' : 'C')}</button>
-        <button>+/-</button>
-        <button>%</button>
+        <button onClick={handelClear} >{(output === 0 && prevNum === 0 ? 'AC' : 'C')}</button>
+        <button onClick={() => handelMath('+/-')}>+/-</button>
+        <button onClick={() => handelMath('%')}>%</button>
         <button onClick={() => handelMath('divide')}>/</button>
         <button onClick={() => handelOutput(7)}>7</button>
         <button onClick={() => handelOutput(8)}>8</button>
